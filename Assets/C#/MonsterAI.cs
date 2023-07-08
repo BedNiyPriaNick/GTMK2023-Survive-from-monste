@@ -12,16 +12,23 @@ public class MonsterAI : MonoBehaviour
     private float idleTime, chaseTime;
     private bool walking, chasing;
     [SerializeField] private Transform player;
-    Transform currentDest;
-    Vector3 dest;
-    int randNum;
-    private int destinationAmount;
+    private Transform currentDest;
+    private Vector3 dest;
+    private int randNum;
+    [SerializeField] private int destinationAmount;
     private Vector3 rayCastOffset;
+    [SerializeField] private PlayerMove playerScript;
 
     void Start()
     {
-        walking = true;
-        destinationAmount = destinations.Count;
+        aiAnim = GetComponent<Animator>();
+        ai = GetComponent<NavMeshAgent>();
+
+        ai.updateRotation = false;
+        ai.updateUpAxis = false;
+
+        walking = false;
+        chasing = true;
         randNum = Random.Range(0, destinationAmount);
         currentDest = destinations[randNum];
     }
@@ -29,6 +36,7 @@ public class MonsterAI : MonoBehaviour
     {
         Vector3 direction = (player.position - transform.position).normalized;
         RaycastHit hit;
+
         if (Physics.Raycast(transform.position + rayCastOffset, direction, out hit, sightDistance))
         {
             if (hit.collider.gameObject.tag == "Player")
@@ -40,6 +48,14 @@ public class MonsterAI : MonoBehaviour
                 chasing = true;
             }
         }
+
+        if (playerScript.Hiding)
+        {
+            StopCoroutine("chaseRoutine");
+            chasing = false;
+            walking = true;
+        }
+
         if (chasing == true)
         {
             dest = player.position;
@@ -48,16 +64,6 @@ public class MonsterAI : MonoBehaviour
             aiAnim.ResetTrigger("walk");
             aiAnim.ResetTrigger("idle");
             aiAnim.SetTrigger("sprint");
-            if (ai.remainingDistance <= catchDistance)
-            {
-                player.gameObject.SetActive(false);
-                aiAnim.ResetTrigger("walk");
-                aiAnim.ResetTrigger("idle");
-                aiAnim.ResetTrigger("sprint");
-                aiAnim.SetTrigger("jumpscare");
-                StartCoroutine(deathRoutine());
-                chasing = false;
-            }
         }
         if (walking == true)
         {
@@ -79,6 +85,7 @@ public class MonsterAI : MonoBehaviour
             }
         }
     }
+
     IEnumerator stayIdle()
     {
         idleTime = Random.Range(minIdleTime, maxIdleTime);
@@ -100,5 +107,17 @@ public class MonsterAI : MonoBehaviour
     {
         yield return new WaitForSeconds(jumpscareTime);
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void OnCollisionEnter2D(Collision2D other)
+    {
+        if (other.gameObject.tag == "Player")
+        {
+            aiAnim.ResetTrigger("walk");
+            aiAnim.ResetTrigger("idle");
+            aiAnim.ResetTrigger("sprint");
+            StartCoroutine(deathRoutine());
+            chasing = false;
+        }
     }
 }

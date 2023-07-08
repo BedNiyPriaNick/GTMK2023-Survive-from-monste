@@ -20,7 +20,7 @@ public class PlayerMove : MonoBehaviour
     {
         LockInLocker();
 
-        if (_hiding)
+        if (Hiding)
             return;
 
         Walk();
@@ -39,7 +39,7 @@ public class PlayerMove : MonoBehaviour
         if (Input.GetKey(KeyCode.LeftShift) && _speedBar.value > 0.1f)
         {
             _speedBar.value -= Time.deltaTime;
-            _speed += 0.1f;
+            _speed += 0.01f;
 
             if (_speed > _startSpeed * 2)
                 _speed = _startSpeed * 2;
@@ -92,7 +92,7 @@ public class PlayerMove : MonoBehaviour
     }
 
     private bool _canGoInside;
-    private bool _hiding;
+    [HideInInspector] public bool Hiding;
 
     void LockInLocker()
     {
@@ -100,12 +100,14 @@ public class PlayerMove : MonoBehaviour
         {
             _rb.velocity = Vector2.zero;
             _sprite.sortingOrder--;
-            _hiding = true;
+            Physics2D.IgnoreLayerCollision(7, 8, true);
+            Hiding = true;
         }
         else
         {
             _sprite.sortingOrder = _startSpriteOrder;
-            _hiding = false;
+            Physics2D.IgnoreLayerCollision(7, 8, false);
+            Hiding = false;
         }
     }
     private void OnTriggerEnter2D(Collider2D other)
